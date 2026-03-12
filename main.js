@@ -8,6 +8,16 @@ const fs = require("fs");
 // ============================================================
 function getShiftDuration(startTime, endTime) {
     // TODO: Implement this function
+        let startSeconds = convertTo24Hour(startTime);
+    let endSeconds = convertTo24Hour(endTime);
+
+    let duration = endSeconds - startSeconds;
+
+    if (duration < 0) {
+        duration += 24 * 3600;
+    }
+
+    return secondsToTime(duration);
 }
 
 // ============================================================
@@ -18,6 +28,23 @@ function getShiftDuration(startTime, endTime) {
 // ============================================================
 function getIdleTime(startTime, endTime) {
     // TODO: Implement this function
+         let start = convertTo24Hour(startTime);
+    let end = convertTo24Hour(endTime);
+
+    let deliveryStart = 8 * 3600;   // 8 elsb7
+    let deliveryEnd = 22 * 3600;    // 10 blil
+
+    let idle = 0;
+
+    if (start < deliveryStart) {
+        idle += deliveryStart - start;
+    }
+
+    if (end > deliveryEnd) {
+        idle += end - deliveryEnd;
+    }
+
+    return secondsToTime(idle);
 }
 
 // ============================================================
@@ -28,6 +55,11 @@ function getIdleTime(startTime, endTime) {
 // ============================================================
 function getActiveTime(shiftDuration, idleTime) {
     // TODO: Implement this function
+    let shiftSeconds = timeToSeconds(shiftDuration);
+    let idleSeconds = timeToSeconds(idleTime);
+    let active = shiftSeconds - idleSeconds;
+    return secondsToTime(active);
+
 }
 
 // ============================================================
@@ -38,6 +70,17 @@ function getActiveTime(shiftDuration, idleTime) {
 // ============================================================
 function metQuota(date, activeTime) {
     // TODO: Implement this function
+     let activeSeconds = timeToSeconds(activeTime);
+    let parts = date.split("-");
+    let day = parseInt(parts[2]);
+    let quota;
+    if (day >= 10 && day <= 30) {
+        quota = 6 * 3600;              // Eid quota
+    } else {
+        quota = 8 * 3600 + 24 * 60;    // normal quota
+    }
+    return activeSeconds >= quota;
+
 }
 
 // ============================================================
@@ -109,6 +152,37 @@ function getNetPay(driverID, actualHours, requiredHours, rateFile) {
     // TODO: Implement this function
 }
 
+
+function timeToSeconds(time) {
+    let parts = time.split(":");
+    let h = parseInt(parts[0]);
+    let m = parseInt(parts[1]);
+    let s = parseInt(parts[2]);
+
+    return h * 3600 + m * 60 + s;
+   
+}
+
+function secondsToTime(sec) {
+    let h = Math.floor(sec / 3600);
+    sec %= 3600;
+    let m = Math.floor(sec / 60);
+    let s = sec % 60;
+
+    return `${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+}
+
+function convertTo24Hour(time) {
+    let [clock, period] = time.split(" ");
+    let [h,m,s] = clock.split(":").map(Number);
+
+    if(period === "pm" && h !== 12) h += 12;
+    if(period === "am" && h === 12) h = 0;
+
+    return h*3600 + m*60 + s;
+}
+
+
 module.exports = {
     getShiftDuration,
     getIdleTime,
@@ -121,3 +195,6 @@ module.exports = {
     getRequiredHoursPerMonth,
     getNetPay
 };
+
+
+
